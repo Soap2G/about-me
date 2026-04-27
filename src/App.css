@@ -3,9 +3,9 @@
   --color-text: #1a1a1a;
   --color-muted: #6b6b6b;
   --color-link: #1a1a1a;
-  --color-link-hover: #c0392b;
+  --color-link-hover: #3d7530;
   --color-border: #e7e3da;
-  --color-accent: #c0392b;
+  --color-accent: #3d7530;
   --color-selection-bg: #1a1a1a;
   --color-selection-fg: #fbfaf7;
   --max-content-width: 720px;
@@ -16,9 +16,9 @@ body[data-theme='dark'] {
   --color-text: #e8e6e1;
   --color-muted: #9a9a9a;
   --color-link: #e8e6e1;
-  --color-link-hover: #f29e8e;
+  --color-link-hover: #a8d09a;
   --color-border: #2a2d33;
-  --color-accent: #f29e8e;
+  --color-accent: #a8d09a;
   --color-selection-bg: #e8e6e1;
   --color-selection-fg: #16181d;
 }
