@@ -1,81 +1,42 @@
-import React, { useRef,  useState, useEffect } from 'react';
-import { ParallaxProvider } from 'react-scroll-parallax';
-import { Routes, Route } from 'react-router-dom';
-import Introduction from './components/intro/Introduction';
-import Footer from "./components/Footer.js";
-import Header from "./components/Header.js";
-import Transitions from "./components/Transitions";
-import { useLocation } from 'react-router-dom';
-import { AnimatePresence } from "framer-motion";
-import { I18nextProvider } from 'react-i18next';
-import i18n from './i18n';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 
+import Header from './components/Header.js';
+import Footer from './components/Footer.js';
+import Transitions from './components/Transitions';
+
+import Home from './pages/Home';
+import Essays from './pages/Essays';
+import Essay from './pages/Essay';
 
 import './App.css';
 
 function App() {
-
-
-    const ref = useRef(null);
-	
     const location = useLocation();
 
-    // Initialize theme based on localStorage or default to 'light'
-    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+    const [theme, setTheme] = useState(() => {
+        return localStorage.getItem('theme') || 'light';
+    });
 
-    // Apply theme to body
     useEffect(() => {
         document.body.dataset.theme = theme;
+        localStorage.setItem('theme', theme);
     }, [theme]);
 
-    // Set viewport height
-    useEffect(() => {
-        const setBodyHeight = () => {
-            const vh = window.innerHeight;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
-        };
-
-        setBodyHeight();
-        window.addEventListener('resize', setBodyHeight);
-
-        return () => {
-            window.removeEventListener('resize', setBodyHeight);
-        };
-    }, []);
-
     return (
-        <ParallaxProvider>
-            <I18nextProvider i18n={i18n}>
-                <main ref={ref}>
-                    <Header theme={theme} setTheme={setTheme} />
-                    <div className={`theme-${theme}`}>
-                            <AnimatePresence 
-                            initial={false}
-                            mode='wait'
-                            >
-                                <Routes 
-                                location={location}
-                                key={location.pathname}
-                                >
-                                    <Route 
-                                    exact
-                                    path="/" 
-                                    element={
-                                        <>
-                                            <Transitions>
-                                                <Introduction />
-                                                <Footer />
-                                            </Transitions>
-                                            
-                                        </>
-                                    } />
-                                </Routes>
-                            </AnimatePresence>
-                    </div>
-                    
-                </main>
-            </I18nextProvider>
-        </ParallaxProvider>
+        <div className="site">
+            <Header theme={theme} setTheme={setTheme} />
+            <AnimatePresence initial={false} mode="wait">
+                <Routes location={location} key={location.pathname}>
+                    <Route path="/" element={<Transitions><Home /></Transitions>} />
+                    <Route path="/essays" element={<Transitions><Essays /></Transitions>} />
+                    <Route path="/essay/:slug" element={<Transitions><Essay /></Transitions>} />
+                    <Route path="*" element={<Transitions><Home /></Transitions>} />
+                </Routes>
+            </AnimatePresence>
+            <Footer />
+        </div>
     );
 }
 

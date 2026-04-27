@@ -1,46 +1,18 @@
-import React from "react";
-// import { Icon } from '@iconify/react';
-// import { useTranslation } from 'react-i18next';
-import './Footer.css'
- 
-const Footer = () => {
-  // const { t } = useTranslation();
+import React from 'react';
+import './Footer.css';
 
-  return (
-    <div className="box">
-      <div className="footer-div">
-        <div className="footer-row">
-          {/* <div className="footer-column">
-              <div>
-                Sandro Cottafava <br/>
-                Via xyz modena
-              </div>
-          </div> */}
-          <div className="footer-column">
-            <div className="footer-heading">
-              -
+const Footer = () => {
+    return (
+        <footer className="site-footer">
+            <div className="container site-footer-inner">
+                <span>© {new Date().getFullYear()} Giovanni Guerrieri</span>
+                <span className="site-footer-sep">·</span>
+                <a href="https://github.com/Soap2G" target="_blank" rel="noreferrer">GitHub</a>
+                <span className="site-footer-sep">·</span>
+                <a href="https://www.linkedin.com/in/giovanni-guerrieri-b4b9a7170/" target="_blank" rel="noreferrer">LinkedIn</a>
             </div>
-                <span>-</span> <br/>
-                
-                <span
-                style={{ lineHeight: '2rem' }}
-                >-</span>
-          </div>
-          <div
-           style={{ textAlign: 'right' }}
-           className="footer-column">
-            {/* <div className="footer-heading">
-              Contatti
-            </div> */}
-            -
-          </div>
-        </div>
-        <div className="footer-case">
-          Made by GG
-        </div>
-      </div>
-    </div>
-  );
+        </footer>
+    );
 };
 
 export default Footer;

@@ -1,29 +1,32 @@
-# Scott SRL website [![pages-build-deployment](https://github.com/Soap2G/scott-website/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/Soap2G/scott-website/actions/workflows/pages/pages-build-deployment)
+# Giovanni Guerrieri — personal site
 
-https://soap2g.github.io/austral-power
+A small React site with a portfolio home page and a markdown-driven blog. Inspired by [darioamodei.com](https://www.darioamodei.com/).
 
+## Local development
 
-### Getting the code
-To download the repository, execute
-```
-git clone https://github.com/Soap2G/giocotta.git
-```
+This project targets Node 22 (LTS) — a `.nvmrc` is provided. Newer node majors (e.g. 25) break `react-scripts 5.0.1` silently during install.
 
-### Compile it locally with Docker
-As soon as you have docker installed, you can just do 
-```
-docker-compose up -d --build
-```
-To have the website pointing to [http://localhost:3000](http://localhost:3000/).
-
-### Compile it locally without Docker
-You need to install `npm`, you can get started from [this page](https://nodejs.org/en/download).
-Then install `yarn` with:
-```
-npm install --global yarn
-```
-And build the website using 
-```
+```bash
+nvm use            # picks up .nvmrc → Node 22
 yarn install
 yarn start
 ```
+
+The site is served on [http://localhost:3000](http://localhost:3000).
+
+To build for production:
+
+```bash
+yarn build
+```
+
+## Adding an essay
+
+1. Drop the markdown file in [`public/essays/`](public/essays), e.g. `public/essays/my-post.md`.
+2. Register it in [`src/essays/manifest.js`](src/essays/manifest.js) with a `slug`, `title`, `date`, optional `summary`, and the `file` name.
+
+The post is then reachable at `/essay/<slug>` and listed on `/essays`.
+
+## Deployment
+
+The site is deployed on Netlify; configuration lives in [`netlify.toml`](netlify.toml). The SPA fallback in [`public/_redirects`](public/_redirects) makes deep-links work.
