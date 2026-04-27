@@ -1,13 +1,10 @@
 version: '3.7'
 
 services:
-
-  sample:
-    container_name: sample
+  web:
+    container_name: aboutme
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - 3000:3000
-    stdin_open: true 
-    tty: true
+      - "8080:8080"
