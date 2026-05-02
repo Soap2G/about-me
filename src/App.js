@@ -9,6 +9,7 @@ import Transitions from './components/Transitions';
 import Home from './pages/Home';
 import Essays from './pages/Essays';
 import Essay from './pages/Essay';
+import Chep2026 from './pages/Chep2026';
 
 import './App.css';
 
@@ -32,6 +33,7 @@ function App() {
                     <Route path="/" element={<Transitions><Home /></Transitions>} />
                     <Route path="/essays" element={<Transitions><Essays /></Transitions>} />
                     <Route path="/essay/:slug" element={<Transitions><Essay /></Transitions>} />
+                    <Route path="/chep2026" element={<Transitions><Chep2026 /></Transitions>} />
                     <Route path="*" element={<Transitions><Home /></Transitions>} />
                 </Routes>
             </AnimatePresence>

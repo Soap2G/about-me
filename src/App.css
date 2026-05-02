@@ -8,7 +8,7 @@
   --color-accent: #3d7530;
   --color-selection-bg: #1a1a1a;
   --color-selection-fg: #fbfaf7;
-  --max-content-width: 720px;
+  --max-content-width: 820px;
 }
 
 body[data-theme='dark'] {

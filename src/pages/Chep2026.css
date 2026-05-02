@@ -1,0 +1,376 @@
+/* ── Container ─────────────────────────────────────────── */
+.chep-page {
+    max-width: var(--max-content-width);
+    margin: 0 auto;
+    padding: 2.5rem 0rem 3rem;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.chep-header {
+    margin-bottom: 2rem;
+}
+
+.chep-header h1 {
+    margin: 0 0 0.35rem;
+    font-size: 2.4rem;
+    letter-spacing: -0.02em;
+}
+
+.chep-subtitle {
+    color: var(--color-muted);
+    font-size: 1rem;
+    margin: 0 0 1rem;
+}
+
+.chep-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* ── Day filter ─────────────────────────────────────────── */
+.chep-day-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1.75rem;
+}
+
+.chep-day-btn {
+    padding: 0.3rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-muted);
+    font-family: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.chep-day-btn:hover {
+    border-color: var(--color-text);
+    color: var(--color-text);
+}
+
+.chep-day-btn.active {
+    background: var(--color-text);
+    border-color: var(--color-text);
+    color: var(--color-background);
+}
+
+/* ── Day section ────────────────────────────────────────── */
+.chep-day {
+    margin-bottom: 2.25rem;
+}
+
+.chep-day-label {
+    display: inline-block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: var(--color-text);
+    color: var(--color-background);
+    padding: 0.2rem 0.7rem;
+    border-radius: 6px;
+    margin: 0 0 1rem;
+}
+
+/* ── Slot ───────────────────────────────────────────────── */
+.chep-slot {
+    margin-bottom: 1.5rem;
+}
+
+.chep-slot-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.chep-time {
+    font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text);
+    min-width: 105px;
+}
+
+.chep-overlap-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #dc2626;
+    background: var(--pc-must-bg);
+    border: 1px solid var(--pc-must-border);
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+}
+
+/* ── Track grid ─────────────────────────────────────────── */
+.chep-tracks {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.chep-track-card {
+    border-radius: 8px;
+    border: 1px solid var(--track-color-border, var(--color-border));
+    background: var(--track-color-bg, transparent);
+    padding: 0.75rem 0.9rem;
+}
+
+.chep-track-name {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.1rem;
+}
+
+.chep-track-subtitle {
+    font-size: 0.78rem;
+    color: var(--color-muted);
+    margin-bottom: 0.5rem;
+    font-style: italic;
+}
+
+/* ── Talks ──────────────────────────────────────────────── */
+.chep-talks {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.chep-talk {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-top: 1px solid var(--color-border);
+}
+
+.chep-talk:first-child {
+    border-top: none;
+}
+
+.chep-talk-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+
+.chep-talk-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
+.chep-talk-title {
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--color-text);
+}
+
+.chep-talk-title.own {
+    font-weight: 700;
+    color: var(--pc-own-dot);
+}
+
+.chep-talk-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.chep-talk-type {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--color-muted);
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.chep-talk-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.72rem;
+    flex-wrap: wrap;
+}
+
+.chep-talk-presenter {
+    font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+    color: var(--color-muted);
+}
+
+.chep-talk-time {
+    font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+    color: var(--color-muted);
+    font-weight: 500;
+    border-left: 1px solid var(--color-border);
+    padding-left: 0.4rem;
+}
+
+/* ── Priority colours ─────────────────────────────────────────────────────
+   Each level has a DIFFERENT background temperature so categories are
+   distinguishable at a glance, not just by dot colour.
+   Hue spread (~25° · ~140° · ~205° · ~265°) is safe for red-green CVD.
+   Dots also differ in luminance, so they separate in greyscale.
+──────────────────────────────────────────────────────────────────────── */
+:root {
+    /* must  — warm terracotta / brick   hue ~25° */
+    --pc-must-bg:     #fdf4ee;
+    --pc-must-border: #c9906a;
+    --pc-must-dot:    #9e5828;
+
+    /* high  — sage green (site accent)  hue ~140° */
+    --pc-high-bg:     #eef6ef;
+    --pc-high-border: #8ec4a0;
+    --pc-high-dot:    #3d8a5e;
+
+    /* nice  — steel / slate blue        hue ~205° */
+    --pc-nice-bg:     #edf2f8;
+    --pc-nice-border: #8aaace;
+    --pc-nice-dot:    #3d6898;
+
+    /* own   — dusty plum               hue ~265° */
+    --pc-own-bg:      #f4f0f9;
+    --pc-own-border:  #b090ce;
+    --pc-own-dot:     #6a4e98;
+}
+
+body[data-theme='dark'] {
+    --pc-must-bg:     #281608;
+    --pc-must-border: #7a4420;
+    --pc-must-dot:    #d48a60;
+
+    --pc-high-bg:     #0e2018;
+    --pc-high-border: #2d6e4a;
+    --pc-high-dot:    #7dc4a0;   /* matches site dark accent #a8d09a */
+
+    --pc-nice-bg:     #0e1a28;
+    --pc-nice-border: #2d5070;
+    --pc-nice-dot:    #85aece;
+
+    --pc-own-bg:      #1a1230;
+    --pc-own-border:  #503878;
+    --pc-own-dot:     #b090d4;
+}
+
+.prio-must .chep-talk-dot { background: var(--pc-must-dot); }
+.prio-high .chep-talk-dot { background: var(--pc-high-dot); }
+.prio-nice .chep-talk-dot { background: var(--pc-nice-dot); }
+.prio-own  .chep-talk-dot { background: var(--pc-own-dot);  }
+
+/* ── Tags (legend + unscheduled) ───────────────────────── */
+.chep-tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid;
+    white-space: nowrap;
+}
+
+.chep-tag.prio-must { background: var(--pc-must-bg); border-color: var(--pc-must-border); color: var(--pc-must-dot); }
+.chep-tag.prio-high { background: var(--pc-high-bg); border-color: var(--pc-high-border); color: var(--pc-high-dot); }
+.chep-tag.prio-nice { background: var(--pc-nice-bg); border-color: var(--pc-nice-border); color: var(--pc-nice-dot); }
+.chep-tag.prio-own  { background: var(--pc-own-bg);  border-color: var(--pc-own-border);  color: var(--pc-own-dot);  }
+
+/* ── Unscheduled ────────────────────────────────────────── */
+.chep-unscheduled-section {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.chep-toggle-btn {
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 0.45rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.chep-toggle-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.chep-unscheduled {
+    margin-top: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+}
+
+.chep-unscheduled-note {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+    margin: 0 0 0.75rem;
+    font-style: italic;
+}
+
+.chep-unscheduled-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.chep-unscheduled-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.85rem;
+}
+
+.chep-unscheduled-item:first-child {
+    border-top: none;
+}
+
+.chep-unscheduled-title {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ── Footer note ────────────────────────────────────────── */
+.chep-footer {
+    border-top: 1px solid var(--color-border);
+    padding-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+    text-align: center;
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media screen and (max-width: 700px) {
+    .chep-tracks {
+        grid-template-columns: 1fr !important;
+    }
+    .chep-page {
+        padding-top: 1.75rem;
+    }
+    .chep-header h1 {
+        font-size: 1.9rem;
+    }
+}
