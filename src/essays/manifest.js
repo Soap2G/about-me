@@ -16,7 +16,7 @@ export const essays = [
     {
         slug: 'collaboration-across-sciences',
         title: 'From quarks to quasars',
-        date: '2026-04-15',
+        date: '2026-05-03',
         summary:
             'Is it easy to collaborate across different scientific disciplines sharing the same computing infrastructure? No. Is it necessary? Yes.',
         file: 'collaboration-across-sciences.md',
@@ -24,7 +24,7 @@ export const essays = [
     {
         slug: 'computing-sharing-economies-of-scale',
         title: "Don't generate the same events twice",
-        date: '2026-03-20',
+        date: '2026-04-02',
         summary: 'How boring must it be for a CPU core to redo the same simulation.',
         file: 'computing-sharing-economies-of-scale.md',
     },
