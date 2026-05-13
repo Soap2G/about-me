@@ -8,18 +8,25 @@ export const essays = [
     {
         slug: 'welcome',
         title: 'A note on starting this site',
-        date: '2026-04-26',
+        date: '2026-03-01',
         summary:
-            'Why I finally built a personal site, what I plan to write here, and how the blog is wired up.',
+            'Well, I built a personal site. Here\'s what I plan to write here, and how the blog is wired up.',
         file: 'welcome.md',
     },
     {
-        slug: 'open-data-at-atlas',
-        title: 'Open Data at ATLAS: bringing TeV collisions to the world',
-        date: '2025-02-28',
+        slug: 'collaboration-across-sciences',
+        title: 'From quarks to quasars',
+        date: '2026-04-15',
         summary:
-            'A short tour of the ATLAS Open Data programme — what it is, who it is for, and the infrastructure behind it.',
-        file: 'open-data-at-atlas.md',
+            'Is it easy to collaborate across different scientific disciplines sharing the same computing infrastructure? No. Is it necessary? Yes.',
+        file: 'collaboration-across-sciences.md',
+    },
+    {
+        slug: 'computing-sharing-economies-of-scale',
+        title: "Don't generate the same events twice",
+        date: '2026-03-20',
+        summary: 'How boring must it be for a CPU core to redo the same simulation.',
+        file: 'computing-sharing-economies-of-scale.md',
     },
 ];
 
