@@ -114,6 +114,9 @@ const Home = () => {
                     <li>
                         <a href="https://inspirehep.net/authors/1911949" target="_blank" rel="noreferrer">InspireHEP</a>
                     </li>
+                    <li>
+                        <a href="https://orcid.org/0000-0002-3403-1177" target="_blank" rel="noreferrer">ORCID</a>
+                    </li>
                 </ul>
             </section>
         </div>
