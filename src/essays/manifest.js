@@ -28,6 +28,13 @@ export const essays = [
         summary: 'How boring must it be for a CPU core to redo the same simulation.',
         file: 'computing-sharing-economies-of-scale.md',
     },
+    {
+        slug: 'lumi-assistant',
+        title: 'Lazy ways to build AI assistants at CERN',
+        date: '2026-05-14',
+        summary: 'When you don\'t have time, you need to develop skills.',
+        file: 'lumi-cern-assistant.md',
+    },
 ];
 
 export const getEssayBySlug = (slug) => essays.find((e) => e.slug === slug);
