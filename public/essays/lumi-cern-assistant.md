@@ -109,5 +109,15 @@ Do you have a skill that is cool? Add it!
 
 What is valuable to me is that each team of experts adds to the domain knowledge layer on top, and that part is just markdown.
 
+### Not everything is roses in Lumi's garden
+
+Every skill you load goes into the context window. Load too many, or point to documentation that's too long, and you burn through tokens *fast*. The model's attention degrades at the edges of a long context, and at some point you just hit a wall. 
+The skill router helps (it picks the most relevant skill for a query, not all of them) but it's still something to keep an eye on.
+
+The approach also has a natural ceiling. Skills work well when the knowledge base is structured and reasonably sized: "how do I submit a REANA workflow", "which queue do I use on lxbatch". They start to break down when you're searching through thousands of pages of unstructured documentation, like EDMS. <br>
+At that point, one **needs** semantic retrieval. RAG is not dead, it's just not always necessary.
+
+LLMs are stateless machines. Each session, hell, each message starts from scratch: Lumi doesn't remember what you asked last week, or that you prefer REANA over HTCondor for your specific workflow. For now, that's the trade-off.
+
 Will Lumi drown in the endless list of use cases? Maybe :) <br>
 At least I had fun writing this bit.
