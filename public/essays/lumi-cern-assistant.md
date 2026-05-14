@@ -1,4 +1,3 @@
-# A rant about the hype of AI assistants
 
 Physicists are lazy, and very picky.
 
@@ -33,7 +32,8 @@ I would like to stay away from variables. After a while it feels like playing wh
 
 So let's try to focus on the constants. Also, how can I be as lazy as possible? (in the end, we are physicists)
 
-> Something that I personally believe *can* be sustainable is a wrapper around an LLM provider (which is a variable), with a skill system on top that allows teams to write skills describing how to use their service, and the assistant can read those files and answer questions about it based on the documentation that needs to be written anyway.
+Something that I personally believe *can* be sustainable is:
+> a wrapper around an LLM provider (which is a variable), with a skill system on top that allows teams to write skills describing how to use their service, and the assistant can read those files and answer questions about it based on the documentation that needs to be written anyway.
 
 Lumi is built around [OpenCode](https://github.com/anomalyco/opencode); I picked OpenCode, but it can actually be anything that accepts an agentic structure like the one that Claude Code proposes, which is the following: 
 ```
@@ -102,8 +102,6 @@ Turns out there is an MCP server for the ATLAS Metadata system: [ami-mcp](https:
 Not very difficult to add it to Lumi. Then, create a few skills to inform the model about the ATLAS analysis workflow, do some testing, and bon appétit.
 
 ### The economies of scale part
-
-Again on economies of scale, apologies, it must be my word of the month.
 
 Each skill is a small, self-contained contribution. A team writes one skill for their service, and every Lumi user benefits from it. We don't care about the LLM infrastructure below, each one can use whatever they want.
 

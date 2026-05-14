@@ -1,4 +1,3 @@
-# From quarks to quasars
 
 I'm giving [a talk at CHEP 2026](https://indico.cern.ch/event/1471803/contributions/6967825/), the main computing conference in High Energy Physics, on behalf of the ESCAPE collaboration.
 The title is "From quarks to quasars: unifying the universe through scalable computing". It sounds ambitious. It kind of is.

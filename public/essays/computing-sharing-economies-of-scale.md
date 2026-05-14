@@ -1,4 +1,3 @@
-# Don't generate the same events twice.
 
 I recently worked on a community paper written as part of the LHC Re-Interpretation Working Group, which is now on ArXiv: [arXiv:2605.12229v1](https://arxiv.org/abs/2605.12229v1).
 
