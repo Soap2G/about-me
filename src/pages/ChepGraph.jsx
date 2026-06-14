@@ -9,13 +9,13 @@ const PALETTE = {
     bg: '#fbfaf7', text: '#1a1a1a', muted: '#6b6b6b', accent: '#3d7530',
     hub: '#ece7da', hubStroke: '#b9b09a',
     link: 'rgba(120,112,96,0.16)', linkDim: 'rgba(120,112,96,0.05)',
-    related: 'rgba(168,95,122,0.28)', relatedHi: '#a85f7a',
+    related: 'rgba(168,95,122,0.28)', relatedHi: '#a85f7a', plenary: 'rgba(201, 181, 146, 0.55)',
   },
   dark: {
     bg: '#16181d', text: '#e8e6e1', muted: '#9a9a9a', accent: '#a8d09a',
     hub: '#272a31', hubStroke: '#454a57',
     link: 'rgba(180,176,166,0.13)', linkDim: 'rgba(180,176,166,0.04)',
-    related: 'rgba(190,120,150,0.30)', relatedHi: '#d08bb0',
+    related: 'rgba(190,120,150,0.30)', relatedHi: '#d08bb0', plenary: 'rgba(181, 151, 75, 0.2)',
   },
 };
 
@@ -26,6 +26,22 @@ const chipLabel = (t) => {
   const m = t.label && t.label.match(/^Track\s+\d+\s*[-–]\s*(.+)$/);
   return m ? `${t.short} · ${m[1]}` : (t.label || t.short);
 };
+
+// colorblind-friendly palette (Okabe-Ito + extras) — good contrast across hues
+const CB_PALETTE = [
+  '#000000', // black
+  '#E69F00', // orange
+  '#56B4E9', // sky blue
+  '#009E73', // bluish green
+  '#F0E442', // yellow
+  '#0072B2', // blue
+  '#D55E00', // vermillion
+  '#CC79A7', // reddish purple
+  '#6A3D9A', // deep purple
+  '#1B9E77', // teal
+  '#A6761D', // brownish
+  '#666666', // grey
+];
 
 /* ── hooks ──────────────────────────────────────────────────────────────── */
 function useBodyTheme() {
@@ -61,6 +77,21 @@ function useElementSize(ref) {
 export default function ChepGraph() {
   const theme = useBodyTheme();
   const colors = PALETTE[theme];
+  // colorblind-friendly palette (Okabe-Ito + extras) — good contrast across hues
+  const CB_PALETTE = [
+    '#909090ff', // black
+    '#E69F00', // orange
+    '#56B4E9', // sky blue
+    '#009E73', // bluish green
+    '#F0E442', // yellow
+    '#0072B2', // blue
+    '#D55E00', // vermillion
+    '#CC79A7', // reddish purple
+    '#6A3D9A', // deep purple
+    '#1B9E77', // teal
+    '#A6761D', // brownish
+    '#666666', // grey
+  ];
   const fgRef = useRef();
   const stageRef = useRef();
   const didFit = useRef(false);
@@ -101,10 +132,16 @@ export default function ChepGraph() {
   );
 
   const meta = raw?.meta;
+  // map tracks to an accessible palette (deterministic ordering from meta.tracks)
   const trackColor = useMemo(() => {
-    const m = {};
-    (meta?.tracks || []).forEach((t) => { m[t.key] = t.color; });
-    return m;
+    const m = new Map();
+    (meta?.tracks || []).forEach((t, i) => {
+      m.set(t.key, CB_PALETTE[i % CB_PALETTE.length]);
+    });
+    // return plain object for compatibility with existing usage
+    const obj = {};
+    for (const [k, v] of m.entries()) obj[k] = v;
+    return obj;
   }, [meta]);
 
   const nodeById = useMemo(() => {
@@ -244,12 +281,14 @@ export default function ChepGraph() {
     const touches = focusId && (idOf(l.source) === focusId || idOf(l.target) === focusId);
     if (touches) return l.type === 'related' ? colors.relatedHi : colors.accent;
     if (focusId) return colors.linkDim;
+    if (l.type === 'plenary') return colors.plenary;
     return l.type === 'related' ? colors.related : colors.link;
   }, [focusId, colors]);
 
   const linkWidth = useCallback((l) => {
     const touches = focusId && (idOf(l.source) === focusId || idOf(l.target) === focusId);
-    return touches ? (l.type === 'related' ? 1.6 : 1.1) : 0.4;
+    if (touches) return l.type === 'related' ? 1.6 : 1.1;
+    return l.type === 'plenary' ? 0.9 : 0.4;
   }, [focusId]);
 
   /* ── handlers ── */
@@ -407,7 +446,9 @@ export default function ChepGraph() {
           <aside className="cg-panel">
             <button className="cg-close" onClick={() => setSelected(null)} aria-label="Close">×</button>
             <div className="cg-panel-track" style={{ color: trackColor[selectedNode.trackKey] }}>
-              {selectedNode.track || selectedNode.session}
+              {selectedNode.corrTrack
+                ? `Plenary → ${selectedNode.track}`
+                : (selectedNode.track || selectedNode.session)}
               {selectedNode.own && <span className="cg-own-badge"> · my talk</span>}
             </div>
             <h2 className="cg-panel-title">

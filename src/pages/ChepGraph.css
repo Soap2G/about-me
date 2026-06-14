@@ -82,8 +82,9 @@
   align-items: flex-start;
 }
 .cg-tracks {
-  flex: 0 0 200px;
+  flex: 0 0 230px;
   display: flex;
+  justify-content: center;
   flex-direction: column;
   gap: 0.4rem;
   max-height: 76vh;
@@ -92,6 +93,7 @@
 .cg-tracks .cg-chip {
   width: 100%;
   justify-content: flex-start;
+  align-items: center;
   text-align: left;
   white-space: normal;
   line-height: 1.3;
@@ -123,7 +125,6 @@
   background: var(--c, var(--color-muted));
   flex-shrink: 0;
 }
-.cg-tracks .cg-chip { align-items: flex-start; }
 .cg-tracks .cg-chip .cg-dot { margin-top: 0.28rem; }
 .cg-chip .cg-dot.ring {
   background: transparent;

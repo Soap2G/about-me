@@ -241,6 +241,12 @@ def track_key(track, session):
     return "Other"
 
 
+def track_num_key(track):
+    """The 'T<n>' key embedded in a track string (e.g. 'Track 4 - ...'), or None."""
+    m = re.search(r"Track\s+(\d+)", track or "")
+    return f"T{m.group(1)}" if m else None
+
+
 def talk_type(type_str, session):
     t = (type_str or "").lower()
     s = (session or "").lower()
@@ -279,7 +285,11 @@ def main():
         own = any((p.get("last_name") or "") == OWN_SURNAME for p in all_people)
 
         sd, ed = c.get("startDate") or {}, c.get("endDate") or {}
-        tkey = track_key(c.get("track"), c.get("session"))
+        # plenary presentations are filed under the Plenary hub but keep a link
+        # to their "corresponding" track (the track Indico assigns them)
+        is_plenary = (c.get("type") or "") == "Plenary Presentation"
+        tkey = "Plenary" if is_plenary else track_key(c.get("track"), c.get("session"))
+        corr = track_num_key(c.get("track")) if is_plenary else None
         node = {
             "id": f"c{c.get('id')}",
             "type": "talk",
@@ -289,6 +299,7 @@ def main():
             "speakers": people,
             "track": c.get("track") or c.get("session") or "",
             "trackKey": tkey,
+            "corrTrack": corr,
             "session": c.get("session") or "",
             "talkType": talk_type(c.get("type"), c.get("session")),
             "day": day_label(sd.get("date", "")),
@@ -338,6 +349,11 @@ def main():
     # talk -> track membership edges (define the layout: clusters per track)
     links = [{"source": n["id"], "target": f"trk:{n['trackKey']}", "type": "member"} for n in nodes]
 
+    # plenary talks -> their corresponding track hub (special highlighted cross-links)
+    for n in nodes:
+        if n.get("corrTrack"):
+            links.append({"source": n["id"], "target": f"trk:{n['corrTrack']}", "type": "plenary"})
+
     # talk <-> talk "related" edges: share >= MIN_RELATED_W topics (cross-track threads)
     pair_w = defaultdict(int)
     pair_shared = defaultdict(list)
@@ -373,6 +389,7 @@ def main():
                 "topics": len(topics),
                 "memberEdges": sum(1 for l in links if l["type"] == "member"),
                 "relatedEdges": sum(1 for l in links if l["type"] == "related"),
+                "plenaryEdges": sum(1 for l in links if l["type"] == "plenary"),
             },
         },
         "nodes": nodes + track_nodes,
@@ -385,7 +402,8 @@ def main():
 
     print(f"talks={len(nodes)}  track-hubs={len(track_nodes)}  topics={len(topics)}  "
           f"member-edges={graph['meta']['counts']['memberEdges']}  "
-          f"related-edges={graph['meta']['counts']['relatedEdges']}")
+          f"related-edges={graph['meta']['counts']['relatedEdges']}  "
+          f"plenary-edges={graph['meta']['counts']['plenaryEdges']}")
     print(f"wrote {OUT}  ({size:,} bytes)")
     print(f"topic coverage: {len(nodes) - len(no_topic)}/{len(nodes)} talks matched >=1 topic")
 
