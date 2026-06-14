@@ -32,14 +32,14 @@ const CB_PALETTE = [
   '#E69F00', // orange
   '#56B4E9', // sky blue
   '#009E73', // bluish green
-  '#F0E442', // yellow
+  '#C9A800', // amber (F0E442 yellow darkened for light-bg contrast)
   '#0072B2', // blue
   '#D55E00', // vermillion
   '#CC79A7', // reddish purple
   '#6A3D9A', // deep purple
   '#1B9E77', // teal
   '#A6761D', // brownish
-  '#999999', // grey (Other)
+  '#737373', // grey — Other (999 too faint on light bg)
 ];
 
 /* ── hooks ──────────────────────────────────────────────────────────────── */
