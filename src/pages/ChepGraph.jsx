@@ -27,9 +27,8 @@ const chipLabel = (t) => {
   return m ? `${t.short} · ${m[1]}` : (t.label || t.short);
 };
 
-// colorblind-friendly palette (Okabe-Ito + extras) — good contrast across hues
+// Okabe-Ito colorblind-safe palette (11 tracks + spare)
 const CB_PALETTE = [
-  '#000000', // black
   '#E69F00', // orange
   '#56B4E9', // sky blue
   '#009E73', // bluish green
@@ -40,7 +39,7 @@ const CB_PALETTE = [
   '#6A3D9A', // deep purple
   '#1B9E77', // teal
   '#A6761D', // brownish
-  '#666666', // grey
+  '#999999', // grey (Other)
 ];
 
 /* ── hooks ──────────────────────────────────────────────────────────────── */
@@ -77,21 +76,6 @@ function useElementSize(ref) {
 export default function ChepGraph() {
   const theme = useBodyTheme();
   const colors = PALETTE[theme];
-  // colorblind-friendly palette (Okabe-Ito + extras) — good contrast across hues
-  const CB_PALETTE = [
-    '#909090ff', // black
-    '#E69F00', // orange
-    '#56B4E9', // sky blue
-    '#009E73', // bluish green
-    '#F0E442', // yellow
-    '#0072B2', // blue
-    '#D55E00', // vermillion
-    '#CC79A7', // reddish purple
-    '#6A3D9A', // deep purple
-    '#1B9E77', // teal
-    '#A6761D', // brownish
-    '#666666', // grey
-  ];
   const fgRef = useRef();
   const stageRef = useRef();
   const didFit = useRef(false);
@@ -134,13 +118,10 @@ export default function ChepGraph() {
   const meta = raw?.meta;
   // map tracks to an accessible palette (deterministic ordering from meta.tracks)
   const trackColor = useMemo(() => {
-    const m = new Map();
-    (meta?.tracks || []).forEach((t, i) => {
-      m.set(t.key, CB_PALETTE[i % CB_PALETTE.length]);
-    });
-    // return plain object for compatibility with existing usage
     const obj = {};
-    for (const [k, v] of m.entries()) obj[k] = v;
+    (meta?.tracks || []).forEach((t, i) => {
+      obj[t.key] = CB_PALETTE[i % CB_PALETTE.length];
+    });
     return obj;
   }, [meta]);
 
@@ -218,14 +199,14 @@ export default function ChepGraph() {
       const r = 4 + Math.sqrt(node.count) * 0.7;
       ctx.beginPath();
       ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
-      ctx.fillStyle = node.color;
+      ctx.fillStyle = trackColor[node.key] || node.color;
       ctx.fill();
       ctx.lineWidth = 1;
       ctx.strokeStyle = colors.bg;
       ctx.stroke();
       const fs = Math.max(5, 13 / scale);
       ctx.font = `700 ${fs}px ${LABEL_FONT}`;
-      ctx.fillStyle = node.color;
+      ctx.fillStyle = trackColor[node.key] || node.color;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillText(node.short, node.x, node.y + r + 1.5);
@@ -281,14 +262,30 @@ export default function ChepGraph() {
     const touches = focusId && (idOf(l.source) === focusId || idOf(l.target) === focusId);
     if (touches) return l.type === 'related' ? colors.relatedHi : colors.accent;
     if (focusId) return colors.linkDim;
-    if (l.type === 'plenary') return colors.plenary;
     return l.type === 'related' ? colors.related : colors.link;
   }, [focusId, colors]);
 
   const linkWidth = useCallback((l) => {
     const touches = focusId && (idOf(l.source) === focusId || idOf(l.target) === focusId);
     if (touches) return l.type === 'related' ? 1.6 : 1.1;
-    return l.type === 'plenary' ? 0.9 : 0.4;
+    return 0.4;
+  }, [focusId]);
+
+  /* dashed grey painter for plenary→track edges */
+  const linkCanvasObject = useCallback((l, ctx) => {
+    const s = l.source, t = l.target;
+    if (s?.x == null || t?.x == null) return;
+    const touches = focusId && (idOf(l.source) === focusId || idOf(l.target) === focusId);
+    const alpha = focusId ? (touches ? 0.65 : 0.07) : 0.38;
+    ctx.save();
+    ctx.beginPath();
+    ctx.setLineDash([3, 5]);
+    ctx.strokeStyle = `rgba(150,150,150,${alpha})`;
+    ctx.lineWidth = touches ? 1.2 : 0.8;
+    ctx.moveTo(s.x, s.y);
+    ctx.lineTo(t.x, t.y);
+    ctx.stroke();
+    ctx.restore();
   }, [focusId]);
 
   /* ── handlers ── */
@@ -378,7 +375,7 @@ export default function ChepGraph() {
           <button
             key={t.key}
             className={`cg-chip${hiddenTracks.has(t.key) ? ' off' : ''}`}
-            style={{ '--c': t.color }}
+            style={{ '--c': trackColor[t.key] || t.color }}
             title={t.label}
             onClick={() => toggleTrack(t.key)}
           >
@@ -405,6 +402,8 @@ export default function ChepGraph() {
             linkColor={linkColor}
             linkWidth={linkWidth}
             linkVisibility={linkVisible}
+            linkCanvasObjectMode={(l) => l.type === 'plenary' ? 'replace' : undefined}
+            linkCanvasObject={linkCanvasObject}
             onNodeClick={onNodeClick}
             onNodeHover={(n) => setHovered(n ? n.id : null)}
             onBackgroundClick={() => setSelected(null)}
