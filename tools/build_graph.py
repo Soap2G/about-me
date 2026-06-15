@@ -35,11 +35,13 @@ EVENT_ID = 1471803
 
 MIN_HUB = 3          # a keyword needs >= this many talks to become a hub node
 
-# talk<->talk "related" edges now come from embedding similarity (embed_talks.py)
+# talk<->talk "related" edges: hybrid of embedding similarity + keyword overlap
 EMB_CACHE = os.path.join(HERE, "cache", "chep_embeddings.json")
-SIM_TOP_K = 15       # mutual k-nearest neighbours per talk
-SIM_MODEL = "openai/embeddinggemma-300m"   # must match embed_talks.MODEL
-SIM_MIN = 0.0        # extra cosine floor; tune from --report distribution
+SIM_TOP_K = 4        # related neighbours kept per talk (top-k union, not mutual)
+SIM_POOL = 40        # embedding candidate pool re-ranked by the hybrid score
+SIM_ALPHA = 0.6      # weight: 1.0 = pure embedding, 0.0 = pure keyword overlap
+SIM_MIN = 0.0        # floor on the combined score (tune from --report)
+SIM_MAX_DEGREE = 8   # cap edges per talk to tame hubs (0 = uncapped)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Controlled vocabulary.  topic label -> list of aliases.
@@ -271,11 +273,22 @@ def load_embeddings():
     return {k: v["v"] for k, v in data.get("items", {}).items()}
 
 
-def related_from_embeddings(ordered_ids):
-    """Mutual top-k cosine neighbours between talks. Returns (edges, stats).
+def _keyword_sim(ka, kb):
+    """Jaccard overlap of two keyword lists, in [0, 1]."""
+    if not ka or not kb:
+        return 0.0
+    sa, sb = set(ka), set(kb)
+    inter = len(sa & sb)
+    return inter / len(sa | sb) if inter else 0.0
 
-    edges: list of (id_a, id_b, cosine).  Symmetric layout is unaffected --
-    these are overlay links (force strength 0 in the renderer).
+
+def related_from_embeddings(talk_nodes):
+    """Hybrid (embedding + keyword) related edges. Returns (edges, stats).
+
+    Pipeline: centre the vectors (de-anisotropy spreads the squished cosines),
+    take an embedding candidate pool per talk, re-rank by α·semantic + (1-α)·
+    keyword-overlap, keep each talk's top-k (UNION, so nothing is orphaned),
+    then cap degree to tame hubs. Edges are layout-neutral overlay links.
     """
     emb = load_embeddings()
     if not emb:
@@ -284,34 +297,60 @@ def related_from_embeddings(ordered_ids):
         return [], None
 
     import numpy as np
-    ids = [i for i in ordered_ids if i in emb]
-    if len(ids) < 2:
+    nodes = [n for n in talk_nodes if n["id"] in emb]
+    if len(nodes) < 2:
         return [], None
+    ids = [n["id"] for n in nodes]
+    kws = [n.get("keywords") or [] for n in nodes]
 
     M = np.asarray([emb[i] for i in ids], dtype=np.float32)
+    M -= M.mean(axis=0, keepdims=True)             # centre: kill the common component
     M /= np.linalg.norm(M, axis=1, keepdims=True) + 1e-9
     S = M @ M.T
-    np.fill_diagonal(S, -1.0)                      # never self-link
+    np.fill_diagonal(S, -2.0)                       # never self-link
+    lo, hi = float(S[S > -2].min()), float(S.max())
+    Snorm = (S - lo) / (hi - lo + 1e-9)            # semantic term -> [0, 1]
 
-    k = min(SIM_TOP_K, len(ids) - 1)
-    topk = np.argpartition(-S, kth=k - 1, axis=1)[:, :k]
-    nbr = [set(row.tolist()) for row in topk]
-    edges = {}
+    pool_k = min(SIM_POOL, len(ids) - 1)
+    pool = np.argpartition(-S, kth=pool_k - 1, axis=1)[:, :pool_k]
+
+    # per-talk top-k by hybrid score
+    adj = defaultdict(dict)
     for i in range(len(ids)):
-        for j in topk[i]:
-            if S[i, j] < SIM_MIN:
-                continue
-            if i in nbr[j]:                         # keep only mutual pairs
-                a, b = (i, j) if i < j else (j, i)
-                edges[(a, b)] = max(edges.get((a, b), 0.0), float(S[i, j]))
+        scored = []
+        for j in pool[i]:
+            combined = SIM_ALPHA * float(Snorm[i, j]) + (1 - SIM_ALPHA) * _keyword_sim(kws[i], kws[j])
+            scored.append((combined, int(j)))
+        scored.sort(reverse=True)
+        for combined, j in scored[:SIM_TOP_K]:
+            if combined >= SIM_MIN:
+                adj[i][j] = combined
 
-    out = [(ids[a], ids[b], s) for (a, b), s in edges.items()]
-    top1 = S.max(axis=1)
+    # union into undirected edges (keep the stronger direction's score)
+    edges = {}
+    for i, nbrs in adj.items():
+        for j, c in nbrs.items():
+            a, b = (i, j) if i < j else (j, i)
+            edges[(a, b)] = max(edges.get((a, b), 0.0), c)
+
+    # greedy degree cap: add strongest edges first, skip if either end is saturated
+    if SIM_MAX_DEGREE:
+        deg = defaultdict(int)
+        capped = {}
+        for (a, b), c in sorted(edges.items(), key=lambda kv: -kv[1]):
+            if deg[a] < SIM_MAX_DEGREE and deg[b] < SIM_MAX_DEGREE:
+                capped[(a, b)] = c
+                deg[a] += 1
+                deg[b] += 1
+        edges = capped
+
+    out = [(ids[a], ids[b], c) for (a, b), c in edges.items()]
+    orphans = len(ids) - len({x for a, b, _ in out for x in (a, b)})
     stats = {
         "n": len(ids),
         "edges": len(out),
-        "top1": np.percentile(top1, [50, 75, 90, 99]).round(3).tolist(),
-        "kept": np.percentile([s for *_, s in out], [50, 75, 90, 99]).round(3).tolist() if out else [],
+        "orphans": orphans,
+        "score": np.percentile([c for *_, c in out], [50, 75, 90, 99]).round(3).tolist() if out else [],
     }
     return out, stats
 
@@ -413,9 +452,9 @@ def main():
         if n.get("corrTrack"):
             links.append({"source": n["id"], "target": f"trk:{n['corrTrack']}", "type": "plenary"})
 
-    # talk <-> talk "related" edges from embedding similarity (mutual top-k).
+    # talk <-> talk "related" edges: hybrid embedding + keyword (related_from_embeddings).
     # Keyword extraction above still powers the topic filter / tags / search.
-    related, rel_stats = related_from_embeddings([n["id"] for n in nodes])
+    related, rel_stats = related_from_embeddings(nodes)
     for a, b, sim in related:
         links.append({"source": a, "target": b, "type": "related", "weight": round(sim, 4)})
 
@@ -453,10 +492,27 @@ def main():
     if report:
         if rel_stats:
             deg = 2 * rel_stats["edges"] / rel_stats["n"]
-            print(f"\nEmbedding related edges (mutual top-{SIM_TOP_K}, floor={SIM_MIN}):")
-            print(f"  talks embedded: {rel_stats['n']}   edges: {rel_stats['edges']}   mean degree: {deg:.1f}")
-            print(f"  per-talk top-1 cosine  p50/75/90/99: {rel_stats['top1']}")
-            print(f"  kept-edge cosine       p50/75/90/99: {rel_stats['kept']}")
+            print(f"\nRelated edges (hybrid α={SIM_ALPHA}, top-{SIM_TOP_K} union, cap={SIM_MAX_DEGREE}):")
+            print(f"  talks: {rel_stats['n']}   edges: {rel_stats['edges']}   mean degree: {deg:.1f}   "
+                  f"orphans: {rel_stats['orphans']}")
+            print(f"  combined-score p50/75/90/99: {rel_stats['score']}")
+
+            # validate against the owner's own talks (the cases the user named)
+            byid = {n["id"]: n for n in nodes}
+            radj = defaultdict(list)
+            for l in links:
+                if l["type"] == "related":
+                    radj[l["source"]].append((l["target"], l["weight"]))
+                    radj[l["target"]].append((l["source"], l["weight"]))
+            print("\nOwn talks — related neighbours:")
+            for n in nodes:
+                if not n.get("own"):
+                    continue
+                nb = sorted(radj.get(n["id"], []), key=lambda x: -x[1])
+                print(f"  • [{len(nb)}] {n['title'][:60]}")
+                for tid, w in nb[:6]:
+                    print(f"        {w:.3f}  {byid[tid]['title'][:54]}")
+
         print("\nTop topics (dropdown):")
         for k in topics[:30]:
             print(f"  {k['count']:3d}  {k['name']}")

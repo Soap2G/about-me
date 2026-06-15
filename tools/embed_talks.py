@@ -35,9 +35,12 @@ API_BASE = os.environ.get("CERN_ML_API_BASE", "https://llmgw-litellm.web.cern.ch
 MODEL = os.environ.get("CERN_ML_MODEL", "openai/embeddinggemma-300m")
 TOKEN_VAR = "CERN_ML_TOKEN"
 
-E5_PREFIX = "query: "   # symmetric-similarity prefix (both sides)
+# EmbeddingGemma task prompt (prepended to every text). Clustering is the right
+# instruction for "group/relate similar talks"; the model is trained to expect
+# this format -- omitting it or using E5's "query:" runs the model off-distribution.
+PROMPT = "task: clustering | query: "
 BATCH = 32
-MAX_CHARS = 2000        # ~512-token E5 window; keeps title+abstract in range
+MAX_CHARS = 2000        # ~512-token window; keeps title+abstract in range
 
 
 def load_env(path):
@@ -83,7 +86,7 @@ def main():
         if not title:
             continue
         abstract = clean_text(c.get("description"))
-        text = (E5_PREFIX + f"{title}\n{abstract}").strip()[:MAX_CHARS]
+        text = PROMPT + f"{title}\n{abstract}".strip()[:MAX_CHARS]
         items.append((f"c{c.get('id')}", text))
 
     cache = json.load(open(EMB_CACHE)) if os.path.exists(EMB_CACHE) else {}
