@@ -23,6 +23,7 @@ and the talks that matched nothing.
 import html
 import json
 import os
+import random
 import re
 import sys
 from collections import defaultdict
@@ -490,28 +491,56 @@ def main():
     print(f"topic coverage: {len(nodes) - len(no_topic)}/{len(nodes)} talks matched >=1 topic")
 
     if report:
-        if rel_stats:
-            deg = 2 * rel_stats["edges"] / rel_stats["n"]
-            print(f"\nRelated edges (hybrid α={SIM_ALPHA}, top-{SIM_TOP_K} union, cap={SIM_MAX_DEGREE}):")
-            print(f"  talks: {rel_stats['n']}   edges: {rel_stats['edges']}   mean degree: {deg:.1f}   "
-                  f"orphans: {rel_stats['orphans']}")
-            print(f"  combined-score p50/75/90/99: {rel_stats['score']}")
+        byid = {n["id"]: n for n in nodes}
+        radj = defaultdict(list)
+        for l in links:
+            if l["type"] == "related":
+                radj[l["source"]].append((l["target"], l["weight"]))
+                radj[l["target"]].append((l["source"], l["weight"]))
 
-            # validate against the owner's own talks (the cases the user named)
-            byid = {n["id"]: n for n in nodes}
-            radj = defaultdict(list)
-            for l in links:
-                if l["type"] == "related":
-                    radj[l["source"]].append((l["target"], l["weight"]))
-                    radj[l["target"]].append((l["source"], l["weight"]))
-            print("\nOwn talks — related neighbours:")
-            for n in nodes:
-                if not n.get("own"):
-                    continue
+        def show(node_list, label, topn=6):
+            print(f"\n{label}:")
+            for n in node_list:
                 nb = sorted(radj.get(n["id"], []), key=lambda x: -x[1])
-                print(f"  • [{len(nb)}] {n['title'][:60]}")
-                for tid, w in nb[:6]:
-                    print(f"        {w:.3f}  {byid[tid]['title'][:54]}")
+                print(f"  • [{len(nb)}] ({n.get('trackKey')}) {n['title'][:56]}")
+                for tid, w in nb[:topn]:
+                    o = byid[tid]
+                    x = "*" if o.get("trackKey") != n.get("trackKey") else " "  # * = cross-track
+                    print(f"      {w:.3f} {x}({o.get('trackKey'):>7}) {o['title'][:46]}")
+
+        if rel_stats:
+            related_edges = [l for l in links if l["type"] == "related"]
+            ne = len(related_edges)
+            cross = sum(1 for l in related_edges
+                        if byid[l["source"]]["trackKey"] != byid[l["target"]]["trackKey"])
+            kwshare = sum(1 for l in related_edges
+                          if set(byid[l["source"]].get("keywords") or [])
+                          & set(byid[l["target"]].get("keywords") or []))
+            degs = sorted(len(radj.get(n["id"], [])) for n in nodes)
+            print(f"\nRelated edges (hybrid α={SIM_ALPHA}, top-{SIM_TOP_K} union, cap={SIM_MAX_DEGREE}):")
+            print(f"  talks {rel_stats['n']}  edges {ne}  mean-deg {2 * ne / rel_stats['n']:.1f}  "
+                  f"deg min/med/max {degs[0]}/{degs[len(degs) // 2]}/{degs[-1]}  orphans {rel_stats['orphans']}")
+            print(f"  cross-track {cross / ne:.0%}  share>=1 keyword {kwshare / ne:.0%}  "
+                  f"(semantic-only {1 - kwshare / ne:.0%})  score p50/75/90/99 {rel_stats['score']}")
+
+            show([n for n in nodes if n.get("own")], "Own talks")
+
+            # whole-graph spot check: one random talk per track (* marks cross-track links)
+            rng = random.Random(20260615)
+            by_track = defaultdict(list)
+            for n in nodes:
+                by_track[n.get("trackKey")].append(n)
+            show([rng.choice(v) for _, v in sorted(by_track.items())], "Random spread (1 per track)", topn=5)
+
+            # stress test: no-keyword talks rely purely on the embedding signal
+            nokw = [n for n in nodes if not n.get("keywords")]
+            if nokw:
+                show(rng.sample(nokw, min(6, len(nokw))), "No-keyword talks (semantic-only)", topn=5)
+
+        # targeted lookup:  python tools/build_graph.py --report --talk=rucio
+        q = next((a.split("=", 1)[1].lower() for a in sys.argv if a.startswith("--talk=")), None)
+        if q:
+            show([n for n in nodes if q in n["title"].lower()], f"--talk match: '{q}'", topn=8)
 
         print("\nTop topics (dropdown):")
         for k in topics[:30]:
