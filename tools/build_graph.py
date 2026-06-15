@@ -34,8 +34,12 @@ OUT = os.path.join(HERE, "..", "public", "data", "chep_graph.json")
 EVENT_ID = 1471803
 
 MIN_HUB = 3          # a keyword needs >= this many talks to become a hub node
-MAX_RELATED = 6      # max talk<->talk "related" edges kept per talk
-MIN_RELATED_W = 2    # min shared-topic weight for a "related" edge
+
+# talk<->talk "related" edges now come from embedding similarity (embed_talks.py)
+EMB_CACHE = os.path.join(HERE, "cache", "chep_embeddings.json")
+SIM_TOP_K = 15       # mutual k-nearest neighbours per talk
+SIM_MODEL = "openai/embeddinggemma-300m"   # must match embed_talks.MODEL
+SIM_MIN = 0.0        # extra cosine floor; tune from --report distribution
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Controlled vocabulary.  topic label -> list of aliases.
@@ -258,6 +262,61 @@ def talk_type(type_str, session):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Embedding-based related edges
+# ─────────────────────────────────────────────────────────────────────────────
+def load_embeddings():
+    if not os.path.exists(EMB_CACHE):
+        return None
+    data = json.load(open(EMB_CACHE))
+    return {k: v["v"] for k, v in data.get("items", {}).items()}
+
+
+def related_from_embeddings(ordered_ids):
+    """Mutual top-k cosine neighbours between talks. Returns (edges, stats).
+
+    edges: list of (id_a, id_b, cosine).  Symmetric layout is unaffected --
+    these are overlay links (force strength 0 in the renderer).
+    """
+    emb = load_embeddings()
+    if not emb:
+        print(f"WARNING: no embeddings at {EMB_CACHE}\n"
+              f"         run  python tools/embed_talks.py  first — emitting NO related edges.")
+        return [], None
+
+    import numpy as np
+    ids = [i for i in ordered_ids if i in emb]
+    if len(ids) < 2:
+        return [], None
+
+    M = np.asarray([emb[i] for i in ids], dtype=np.float32)
+    M /= np.linalg.norm(M, axis=1, keepdims=True) + 1e-9
+    S = M @ M.T
+    np.fill_diagonal(S, -1.0)                      # never self-link
+
+    k = min(SIM_TOP_K, len(ids) - 1)
+    topk = np.argpartition(-S, kth=k - 1, axis=1)[:, :k]
+    nbr = [set(row.tolist()) for row in topk]
+    edges = {}
+    for i in range(len(ids)):
+        for j in topk[i]:
+            if S[i, j] < SIM_MIN:
+                continue
+            if i in nbr[j]:                         # keep only mutual pairs
+                a, b = (i, j) if i < j else (j, i)
+                edges[(a, b)] = max(edges.get((a, b), 0.0), float(S[i, j]))
+
+    out = [(ids[a], ids[b], s) for (a, b), s in edges.items()]
+    top1 = S.max(axis=1)
+    stats = {
+        "n": len(ids),
+        "edges": len(out),
+        "top1": np.percentile(top1, [50, 75, 90, 99]).round(3).tolist(),
+        "kept": np.percentile([s for *_, s in out], [50, 75, 90, 99]).round(3).tolist() if out else [],
+    }
+    return out, stats
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Build
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
@@ -354,27 +413,11 @@ def main():
         if n.get("corrTrack"):
             links.append({"source": n["id"], "target": f"trk:{n['corrTrack']}", "type": "plenary"})
 
-    # talk <-> talk "related" edges: share >= MIN_RELATED_W topics (cross-track threads)
-    pair_w = defaultdict(int)
-    pair_shared = defaultdict(list)
-    for t, ids in topic_index.items():
-        for i in range(len(ids)):
-            for j in range(i + 1, len(ids)):
-                a, b = sorted((ids[i], ids[j]))
-                pair_w[(a, b)] += 1
-                pair_shared[(a, b)].append(t)
-    cand = defaultdict(list)
-    for (a, b), w in pair_w.items():
-        if w >= MIN_RELATED_W:
-            cand[a].append((w, b))
-            cand[b].append((w, a))
-    kept = set()
-    for a, lst in cand.items():
-        for w, b in sorted(lst, reverse=True)[:MAX_RELATED]:
-            kept.add(tuple(sorted((a, b))))
-    for a, b in sorted(kept):
-        links.append({"source": a, "target": b, "type": "related",
-                      "weight": pair_w[(a, b)], "shared": pair_shared[(a, b)]})
+    # talk <-> talk "related" edges from embedding similarity (mutual top-k).
+    # Keyword extraction above still powers the topic filter / tags / search.
+    related, rel_stats = related_from_embeddings([n["id"] for n in nodes])
+    for a, b, sim in related:
+        links.append({"source": a, "target": b, "type": "related", "weight": round(sim, 4)})
 
     graph = {
         "meta": {
@@ -408,6 +451,12 @@ def main():
     print(f"topic coverage: {len(nodes) - len(no_topic)}/{len(nodes)} talks matched >=1 topic")
 
     if report:
+        if rel_stats:
+            deg = 2 * rel_stats["edges"] / rel_stats["n"]
+            print(f"\nEmbedding related edges (mutual top-{SIM_TOP_K}, floor={SIM_MIN}):")
+            print(f"  talks embedded: {rel_stats['n']}   edges: {rel_stats['edges']}   mean degree: {deg:.1f}")
+            print(f"  per-talk top-1 cosine  p50/75/90/99: {rel_stats['top1']}")
+            print(f"  kept-edge cosine       p50/75/90/99: {rel_stats['kept']}")
         print("\nTop topics (dropdown):")
         for k in topics[:30]:
             print(f"  {k['count']:3d}  {k['name']}")

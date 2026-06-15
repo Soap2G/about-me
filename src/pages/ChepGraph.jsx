@@ -356,7 +356,7 @@ export default function ChepGraph() {
         </select>
         <label className="cg-toggle">
           <input type="checkbox" checked={showRelated} onChange={(e) => setShowRelated(e.target.checked)} />
-          cross-track links
+          related talks
         </label>
         <label className="cg-toggle">
           <input type="checkbox" checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} />
