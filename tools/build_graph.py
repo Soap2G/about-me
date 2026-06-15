@@ -264,6 +264,25 @@ def talk_type(type_str, session):
     return "talk"
 
 
+# Non-talk logistics entries (ceremonies, social, admin) — kept out of the graph.
+# Titles are anchored at the start so generic words ("lunch", "registration") can't
+# false-match a real talk mid-title. Conference Summaries are intentionally kept.
+SKIP_TITLE_RE = re.compile(
+    r"^(?:"
+    r"welcome|announcement|closing ceremon|opening ceremon|closing remarks|"
+    r"conference (?:dinner|photo|excursion)|how to go there|your survival guide|"
+    r"group photo|poster session awards|registration|coffee break|lunch|excursion|"
+    r"q\s*[/&]\s*a\b|29th conference on computing|welcome reception|"
+    r"social (?:event|programme|dinner)|wrap[- ]?up|group picture"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def is_logistics(title):
+    return bool(SKIP_TITLE_RE.match((title or "").strip()))
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Embedding-based related edges
 # ─────────────────────────────────────────────────────────────────────────────
@@ -370,10 +389,14 @@ def main():
 
     nodes = []
     no_topic = []
+    skipped = []
     for c in contribs:
         title = clean_text(c.get("title"))
         abstract = clean_text(c.get("description"))
         if not title:
+            continue
+        if is_logistics(title):           # ceremonies / social / admin, not a talk
+            skipped.append(title)
             continue
         haystack = f"{title}\n{abstract}"
         kw = topics.match(haystack)
@@ -489,6 +512,7 @@ def main():
           f"plenary-edges={graph['meta']['counts']['plenaryEdges']}")
     print(f"wrote {OUT}  ({size:,} bytes)")
     print(f"topic coverage: {len(nodes) - len(no_topic)}/{len(nodes)} talks matched >=1 topic")
+    print(f"skipped {len(skipped)} non-talk logistics entries")
 
     if report:
         byid = {n["id"]: n for n in nodes}
@@ -547,6 +571,9 @@ def main():
             print(f"  {k['count']:3d}  {k['name']}")
         print(f"\n{len(no_topic)} talks matched NO topic:")
         for t in no_topic:
+            print("  -", t)
+        print(f"\n{len(skipped)} skipped as non-talk logistics:")
+        for t in skipped:
             print("  -", t)
 
 
