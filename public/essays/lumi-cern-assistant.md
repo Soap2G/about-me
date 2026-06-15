@@ -5,7 +5,7 @@ When one creates a service or a resource, they usually should bear in mind that 
 If it's a success, then physicists will jump on board, and they will expect it to work. If for any reason it doesn't work anymore, there's very little wiggle room before they look for alternatives.
 If it's a failure, then physicists won't use it, they will move on, and they won't come back unless forced to.
 
-Physicists are not computer scientists, nor do they want to be. They want to do physics, fast.
+Physicists are not computer scientists, nor do they want to be. They want to do physics, *fast*.
 
 Before I start ranting, I'm not going to talk about AI assistants to do research, I'm going to talk about AI assistants to help physicists navigate the operational landscape of CERN's computing services.
 

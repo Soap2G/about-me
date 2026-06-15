@@ -1,8 +1,9 @@
-I have wanted a personal website for some time and never quite got around to
-building one. 
-I don't want to get too fancy, so I went for the boring option, stealing from folks like Dario Amodei,
-and keeping the structure minimal to a single page, a stupid blog with random thoughts, plain
-markdown, and the smallest possible amount of plumbing in between.
+I have wanted a personal website for some time and never quite got to a spot that I liked.
+I don't want to get too fancy (it requires skills that I do not have), so I went for the boring option, stealing from folks like Dario Amodei (I like his way to present a personal website). 
+
+Now everyone that can vibecode whatever, I felt like minimalism was a good way to express opinions without distractions.
+So everything here is plain markdown, and the smallest possible amount of plumbing in between.
+Sometimes there are pictures, sometimes there are graphs.
 
 ## What I plan to write here
 
