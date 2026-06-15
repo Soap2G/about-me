@@ -21,6 +21,7 @@
 
 # CHEP talk embeddings (regenerable cache; keyed by text hash)
 /tools/cache/chep_embeddings.json
+__pycache__/
 
 npm-debug.log*
 yarn-debug.log*
