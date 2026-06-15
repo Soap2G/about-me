@@ -38,11 +38,10 @@ MIN_HUB = 3          # a keyword needs >= this many talks to become a hub node
 
 # talk<->talk "related" edges: hybrid of embedding similarity + keyword overlap
 EMB_CACHE = os.path.join(HERE, "cache", "chep_embeddings.json")
-SIM_TOP_K = 4        # related neighbours kept per talk (top-k union, not mutual)
-SIM_POOL = 40        # embedding candidate pool re-ranked by the hybrid score
+SIM_TOP_K = 6        # related neighbours kept per talk (top-k union, not mutual)
 SIM_ALPHA = 0.6      # weight: 1.0 = pure embedding, 0.0 = pure keyword overlap
 SIM_MIN = 0.0        # floor on the combined score (tune from --report)
-SIM_MAX_DEGREE = 8   # cap edges per talk to tame hubs (0 = uncapped)
+SIM_MAX_DEGREE = 12  # cap edges per talk to tame hubs (0 = uncapped)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Controlled vocabulary.  topic label -> list of aliases.
@@ -306,9 +305,12 @@ def related_from_embeddings(talk_nodes):
     """Hybrid (embedding + keyword) related edges. Returns (edges, stats).
 
     Pipeline: centre the vectors (de-anisotropy spreads the squished cosines),
-    take an embedding candidate pool per talk, re-rank by α·semantic + (1-α)·
-    keyword-overlap, keep each talk's top-k (UNION, so nothing is orphaned),
-    then cap degree to tame hubs. Edges are layout-neutral overlay links.
+    then score EVERY pair by α·semantic + (1-α)·keyword-overlap and keep each
+    talk's top-k (UNION, so nothing is orphaned), then cap degree to tame hubs.
+    Scoring all pairs (not just an embedding-nearest pool) is deliberate: it
+    lets keyword-strong but embedding-distant pairs link — e.g. two MadGraph-GPU
+    talks the small model ranks 100+ apart but that share Event-generation+GPU.
+    Edges are layout-neutral overlay links.
     """
     emb = load_embeddings()
     if not emb:
@@ -322,6 +324,7 @@ def related_from_embeddings(talk_nodes):
         return [], None
     ids = [n["id"] for n in nodes]
     kws = [n.get("keywords") or [] for n in nodes]
+    n = len(ids)
 
     M = np.asarray([emb[i] for i in ids], dtype=np.float32)
     M -= M.mean(axis=0, keepdims=True)             # centre: kill the common component
@@ -331,26 +334,34 @@ def related_from_embeddings(talk_nodes):
     lo, hi = float(S[S > -2].min()), float(S.max())
     Snorm = (S - lo) / (hi - lo + 1e-9)            # semantic term -> [0, 1]
 
-    pool_k = min(SIM_POOL, len(ids) - 1)
-    pool = np.argpartition(-S, kth=pool_k - 1, axis=1)[:, :pool_k]
+    # keyword Jaccard over all pairs, vectorised (binary talk x vocab matrix)
+    vocab = {}
+    for kk in kws:
+        for k in kk:
+            vocab.setdefault(k, len(vocab))
+    K = np.zeros((n, len(vocab) or 1), dtype=np.float32)
+    for i, kk in enumerate(kws):
+        for k in kk:
+            K[i, vocab[k]] = 1.0
+    inter = K @ K.T
+    ksum = K.sum(axis=1)
+    union = ksum[:, None] + ksum[None, :] - inter
+    with np.errstate(divide="ignore", invalid="ignore"):
+        J = np.where(union > 0, inter / union, 0.0)   # keyword term -> [0, 1]
 
-    # per-talk top-k by hybrid score
-    adj = defaultdict(dict)
-    for i in range(len(ids)):
-        scored = []
-        for j in pool[i]:
-            combined = SIM_ALPHA * float(Snorm[i, j]) + (1 - SIM_ALPHA) * _keyword_sim(kws[i], kws[j])
-            scored.append((combined, int(j)))
-        scored.sort(reverse=True)
-        for combined, j in scored[:SIM_TOP_K]:
-            if combined >= SIM_MIN:
-                adj[i][j] = combined
+    C = SIM_ALPHA * Snorm + (1 - SIM_ALPHA) * J       # combined score, all pairs
+    np.fill_diagonal(C, -1.0)
 
-    # union into undirected edges (keep the stronger direction's score)
+    # each talk's top-k by combined score
+    k = min(SIM_TOP_K, n - 1)
+    topk = np.argpartition(-C, kth=k - 1, axis=1)[:, :k]
     edges = {}
-    for i, nbrs in adj.items():
-        for j, c in nbrs.items():
-            a, b = (i, j) if i < j else (j, i)
+    for i in range(n):
+        for j in topk[i]:
+            c = float(C[i, j])
+            if c < SIM_MIN:
+                continue
+            a, b = (i, int(j)) if i < j else (int(j), i)
             edges[(a, b)] = max(edges.get((a, b), 0.0), c)
 
     # greedy degree cap: add strongest edges first, skip if either end is saturated
