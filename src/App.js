@@ -11,6 +11,7 @@ import Essays from './pages/Essays';
 import Essay from './pages/Essay';
 import Chep2026 from './pages/Chep2026';
 import ChepGraph from './pages/ChepGraph';
+import ChepTrack5 from './pages/ChepTrack5';
 
 import './App.css';
 
@@ -36,6 +37,7 @@ function App() {
                     <Route path="/essay/:slug" element={<Transitions><Essay /></Transitions>} />
                     <Route path="/chep2026" element={<Transitions><ChepGraph /></Transitions>} />
                     <Route path="/chep2026-schedule" element={<Transitions><Chep2026 /></Transitions>} />
+                    <Route path="/chep2026-track5" element={<Transitions><ChepTrack5 /></Transitions>} />
                     <Route path="*" element={<Transitions><Home /></Transitions>} />
                 </Routes>
             </AnimatePresence>
