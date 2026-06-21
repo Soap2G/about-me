@@ -205,6 +205,8 @@ export default function ChepTrack5() {
         <h1>{title}</h1>
         <p className="ct-sub">
           Hover a dot to trace its links · hover or click a category to isolate it · scroll to zoom · click a dot to open the talk.
+          <br />
+          This content is only hosted here. The credit fully goes to Daniele Massaro.
         </p>
       </header>
 
